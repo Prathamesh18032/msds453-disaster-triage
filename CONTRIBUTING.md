@@ -1,7 +1,11 @@
 # Contributing
 
-This is a private research implementation repository. Set up authentication and your
-own commit identity using the [README](README.md). Teammate access is added separately.
+This is an intentionally public research implementation repository containing code,
+synthetic examples and technical documentation. Set up authentication and your own
+commit identity using the [README](README.md). Read the self-contained
+[execution contract](docs/execution-contract.md) before implementation or evaluation.
+Collaborators confirm their clone/workflow and contract acceptance separately from
+GitHub write permission.
 
 ## Branches and pull requests
 
@@ -18,6 +22,19 @@ behavior, validation, and material limitations. Review before merging. Do not
 force-push, rewrite shared history, or delete branches without explicit authorization.
 The initial scaffold is the sole setup commit directly on `main`; branch protections
 and CI have not been configured.
+
+## Slice branches and review
+
+Use one focused feature branch and pull request per execution slice. Agent branches
+use `codex/slice-<number>-<purpose>`, for example
+`codex/slice-1-execution-agreement`. Target `main` and include the slice number,
+changed behavior, validation and remaining gates in the PR description.
+
+Start independent slices from current `main`; parallel work uses separate branches.
+When a slice depends on an unmerged contract/change, state that dependency explicitly.
+After review, prefer squash merging for one coherent main-history entry per slice,
+then start subsequent work from updated `main`. Commit/push/PR/merge actions still
+require the owner's authorization; opening a PR does not authorize merging it.
 
 ## What to commit
 
@@ -47,8 +64,10 @@ safe to commit. Keep full run outputs in ignored `artifacts/` storage.
 
 Use synthetic examples in tests and demonstrations. When experiments are added,
 document code, dataset and split versions, configuration, seeds, metrics, and artifact
-hashes. Freeze model-selection decisions before final-test evaluation. Runtime,
-dependencies, compute, models, and splits are not selected by this scaffold.
+hashes. Freeze model-selection decisions before final-test evaluation. The initial
+scaffold selected no runtime or research policy. Current scientific and compute
+choices are specified in the execution contract; compatible version pins,
+eligible manifests and implementation correctness remain future verification gates.
 
 There is no test suite or CI yet. Add and run meaningful tests with the first executable
 implementation; do not describe placeholder folders as passing tests.
