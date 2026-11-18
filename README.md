@@ -4,28 +4,30 @@ Public code and technical documentation repository for the MSDS 453 disaster-mes
 The research direction is humanitarian information classification on unfamiliar disaster
 events, with attention to rare categories and confidence-based human review.
 
-**Current state: scaffold plus an adopted execution specification.** No datasets have
-been acquired into this repository, and no models have been implemented, trained, or
-evaluated here. The [execution contract](docs/execution-contract.md) specifies HumAID
-set 1 and ten labels, named whole-event partitions, majority/TF-IDF-logistic-regression/
-DistilBERT comparison, weighted transformer loss, FP32 and paired independent T4 jobs.
-CrisisBench remains future work. Eligible counts/manifests, compatible runtime and
-model revisions, actual throughput and numerical correctness remain unfrozen or
-unverified. Both partners have accepted the loss/bundle contract; collaborator
-acceptance and branch clone were reported by the owner on November 18.
-Python/package installation, training/evaluation code, CI and application APIs
-are not configured.
+**Current state: Slice 2 execution foundation, with synthetic verification.**
+The installable package provides strict configuration, provenance, FP32 weighted-loss
+accumulation, checkpoint recovery, attempt accounting and prediction-bundle v1.
+See [Kaggle start-here instructions](docs/kaggle-start-here.md),
+[runtime setup and handoff](docs/runtime-foundation.md) and the unchanged scientific
+[execution contract](docs/execution-contract.md). Actual device/model verification
+evidence is recorded separately. Returned Kaggle verify/resume archives have now
+passed technical review, including both independent workers and four recovered probes.
+See the dated status in the runtime guide; research handling/feasibility remain later gates.
+No HumAID data has been transferred here, no eligible corpus is frozen, and no research
+model schedule, metric/calibration engine or final evaluation has run. Those belong
+to later slices. CrisisBench remains future work. Both partners accepted the scientific
+contract on November 18. CI and application APIs are not configured.
 
 ## Layout
 
 | Location | Purpose |
 |---|---|
 | `docs/` | Self-contained technical study and prediction-bundle contract |
-| `src/disaster_triage/` | Reserved for implementation; currently a placeholder, not an installable package |
-| `tests/` | Future tests using synthetic fixtures |
-| `configs/` | Future nonsensitive, versioned configurations |
-| `notebooks/` | Future notebooks with cleared outputs and reviewed contents |
-| `scripts/` | Future acquisition, evaluation, and maintenance helpers |
+| `src/disaster_triage/` | Installable execution primitives and synthetic checks |
+| `tests/` | Offline tests with inline synthetic fixtures |
+| `configs/` | Strict synthetic configuration and gated research template |
+| `notebooks/` | Cleared synthetic runtime-verification notebook |
+| `scripts/` | Repository, notebook-execution and code-only handoff checks |
 | `data/raw/`, `data/processed/`, `data/derived/` | Local research data, ignored by Git |
 | `artifacts/` | Local weights, predictions, metrics, and figures, ignored by Git |
 | `.cache/` | Local caches, ignored by Git |
@@ -64,7 +66,7 @@ git config --local user.email 'YOUR VERIFIED GITHUB OR NOREPLY EMAIL'
 Use your own author identity. These Git settings apply only to this clone. Credentials
 stay in your authenticated GitHub CLI session, never in a remote URL or tracked file.
 You may use an existing trusted HTTPS credential manager instead of the CLI helper.
-There is no runtime installation command until the development environment is chosen.
+Use the pinned Python 3.12 setup in [runtime instructions](docs/runtime-foundation.md).
 
 ## Data and artifacts
 
@@ -87,6 +89,6 @@ Work on feature branches and submit pull requests into `main`; agent branches us
 documented collaboration policy. Issues are enabled and the wiki is disabled.
 
 Review changes with `git status --short`, `git diff --check`, and `git diff --cached`
-before committing. No automated test suite exists yet; the test directory is a
-placeholder. Add appropriate checks when executable code is introduced.
+before committing. Run make check and make test using the project environment; see the
+[runtime verification guide](docs/runtime-foundation.md) for notebook and integration checks.
 No open-source license has been assigned.
