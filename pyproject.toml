@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools==84.2.1", "wheel==0.48.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "disaster-triage"
+version = "0.1.1"
+description = "Portable synthetic verification foundation for humanitarian classification research"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+  "numpy==2.5.5; python_version == '3.12'",
+  "scipy==1.18.1; python_version == '3.12'",
+  "scikit-learn==1.9.1; python_version == '3.12'",
+  "torch==2.15.0; python_version == '3.12'",
+  "transformers==5.23.0; python_version == '3.12'",
+  "huggingface-hub==2.4.0; python_version == '3.12'",
+  "safetensors==0.8.0; python_version == '3.12'",
+  "datasketch==2.0.0; python_version == '3.12'",
+  "numpy==2.1.3; python_version == '3.13'",
+  "scipy==1.16.3; python_version == '3.13'",
+  "scikit-learn==1.6.1; python_version == '3.13'",
+  "torch==2.11.0; python_version == '3.13'",
+  "transformers==5.20.2; python_version == '3.13'",
+  "huggingface-hub==1.33.0; python_version == '3.13'",
+  "safetensors==0.8.0; python_version == '3.13'",
+  "datasketch==2.0.0; python_version == '3.13'",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==9.2.0", "build==1.6.1", "setuptools==84.2.1", "wheel==0.48.0"]
+notebook = ["ipykernel==7.4.0", "nbformat==5.11.1", "nbclient==0.11.0"]
+
+[project.scripts]
+disaster-triage = "disaster_triage.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

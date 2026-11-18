@@ -1,0 +1,5 @@
+# SUPERSEDED for current Kaggle. Use the reported kaggle-py313 profile.
+# UNVERIFIED candidate. Preserve a compatible preinstalled CUDA build.
+# Check driver/build/runtime before installation; do not replace torch blindly.
+-r common-py312.txt
+torch==2.15.0

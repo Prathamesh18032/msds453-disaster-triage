@@ -1,0 +1,3 @@
+# Verified macOS arm64 profile; standard PyPI PyTorch wheel supports CPU/MPS.
+-r common-py312.txt
+torch==2.15.0

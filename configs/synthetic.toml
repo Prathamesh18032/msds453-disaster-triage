@@ -1,0 +1,17 @@
+# Invented inputs only. Explicit root/device are supplied by the caller.
+mode = "synthetic"
+device = "cpu"
+seed = 42
+precision = "fp32"
+physical_batch = 8
+accumulation = 2
+learning_rate = 0.00002
+max_epochs = 3
+max_length = 128
+checkpoint_interval = 100
+active_job_hours_cap = 24.0
+cutoff = "2026-11-23T23:59:00+05:30"
+data_dir = "data"
+artifact_dir = "artifacts"
+cache_dir = ".cache"
+model_revision = "12040accade4e8a0f71eabdb258fecc2e7e948be"

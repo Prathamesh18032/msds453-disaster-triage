@@ -69,5 +69,6 @@ scaffold selected no runtime or research policy. Current scientific and compute
 choices are specified in the execution contract; compatible version pins,
 eligible manifests and implementation correctness remain future verification gates.
 
-There is no test suite or CI yet. Add and run meaningful tests with the first executable
-implementation; do not describe placeholder folders as passing tests.
+Run make check and make test in the pinned environment. Integration checks and notebook
+execution are documented in [runtime-foundation.md](docs/runtime-foundation.md).
+No CI is configured. Distinguish synthetic verification from research results.
