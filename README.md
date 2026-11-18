@@ -1,19 +1,26 @@
 # Reliable Humanitarian Message Classification Across Unseen Natural Disasters
 
-Private implementation repository for the MSDS 453 disaster-message classification project.
+Public code and technical documentation repository for the MSDS 453 disaster-message classification project.
 The research direction is humanitarian information classification on unfamiliar disaster
 events, with attention to rare categories and confidence-based human review.
 
-**Current state: repository setup only.** No datasets have been acquired into this
-repository, and no models have been implemented, trained, or evaluated here. HumAID is
-the selected primary research source and CrisisBench is supplemental; final corpus
-eligibility, label mappings, event splits, and experiment settings remain undecided.
-Python version, dependencies, compute, CI, and application APIs are not configured.
+**Current state: scaffold plus an adopted execution specification.** No datasets have
+been acquired into this repository, and no models have been implemented, trained, or
+evaluated here. The [execution contract](docs/execution-contract.md) specifies HumAID
+set 1 and ten labels, named whole-event partitions, majority/TF-IDF-logistic-regression/
+DistilBERT comparison, weighted transformer loss, FP32 and paired independent T4 jobs.
+CrisisBench remains future work. Eligible counts/manifests, compatible runtime and
+model revisions, actual throughput and numerical correctness remain unfrozen or
+unverified. Both partners have accepted the loss/bundle contract; collaborator
+acceptance and branch clone were reported by the owner on November 18.
+Python/package installation, training/evaluation code, CI and application APIs
+are not configured.
 
 ## Layout
 
 | Location | Purpose |
 |---|---|
+| `docs/` | Self-contained technical study and prediction-bundle contract |
 | `src/disaster_triage/` | Reserved for implementation; currently a placeholder, not an installable package |
 | `tests/` | Future tests using synthetic fixtures |
 | `configs/` | Future nonsensitive, versioned configurations |
@@ -30,7 +37,10 @@ workspace and are not included here.
 
 ## Authenticate and clone
 
-Access must be granted by the repository owner. Teammate invitations are deferred.
+This repository is intentionally public, so cloning does not require collaborator
+access. Pushing feature branches requires the owner to grant write access. Each
+collaborator should confirm a successful clone and their own author identity; GitHub
+permission alone does not establish a working local clone.
 Install Git and GitHub CLI, then authenticate your own GitHub account if needed:
 
 ```sh
@@ -58,10 +68,13 @@ There is no runtime installation command until the development environment is ch
 
 ## Data and artifacts
 
-Acquire data separately into ignored local storage under the applicable source terms.
+Use ignored local storage under the applicable source terms. Follow the
+[execution contract](docs/execution-contract.md) for the later one-time immutable
+archive transfer/hash verification, fixed scientific policy and prediction-bundle v1.
+Runtime scripts must use this repository's own data paths.
 Record source URLs, versions, acquisition dates, hashes, rights, transformations, and
 split decisions before experiments. Preserve retained raw snapshots unchanged.
-Git exclusions apply even though the remote repository is private: keep source text,
+Git exclusions apply regardless of repository visibility: keep source text,
 derivatives, credentials, weights, caches, and generated outputs outside Git.
 Track only reviewed code, nonsensitive configuration, synthetic tests, and technical
 documentation. Do not point scripts at a neighboring coursework repository.
