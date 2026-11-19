@@ -4,7 +4,7 @@ Public code and technical documentation repository for the MSDS 453 disaster-mes
 The research direction is humanitarian information classification on unfamiliar disaster
 events, with attention to rare categories and confidence-based human review.
 
-**Current state: Slice 3 local dataset freeze accepted; modeling remains future work.**
+**Current state: Slice 4 evaluation engine verified on synthetic bundles; research modeling remains future work.**
 The installable package provides strict configuration, provenance, FP32 weighted-loss
 accumulation, checkpoint recovery, attempt accounting and prediction-bundle v1.
 See [Kaggle start-here instructions](docs/kaggle-start-here.md),
@@ -18,16 +18,17 @@ offline human audit, and can publish/independently verify data and role manifest
 after completed decisions. See [data preparation and review instructions](docs/data-preparation.md).
 The owner approved the 500-row review. The [accepted local data freeze](docs/data-freeze.md)
 contains 43,393 eligible rows after 16 cross-event duplicate removals; independent
-reconstruction and installed-wheel repeatability pass. Research model schedules,
-metrics/calibration and final evaluation remain later work. CrisisBench remains future work. Both partners accepted the scientific
-contract on November 18. CI and application APIs are not configured.
+reconstruction and installed-wheel repeatability pass. The [CPU evaluation engine](docs/evaluation.md)
+scores v1 prediction bundles and fits development review policies. Research modeling,
+calibration and final evaluation remain later work. CrisisBench remains future work.
+Both partners accepted the scientific contract on November 18. CI and application APIs are not configured.
 
 ## Layout
 
 | Location | Purpose |
 |---|---|
 | `docs/` | Self-contained technical study and prediction-bundle contract |
-| `src/disaster_triage/` | Execution primitives, audited data preparation, and verified role reader |
+| `src/disaster_triage/` | Execution primitives, audited data preparation, verified roles, and bundle evaluation |
 | `tests/` | Offline tests with inline synthetic fixtures |
 | `configs/` | Strict synthetic configuration and gated research template |
 | `notebooks/` | Cleared synthetic runtime-verification notebook |

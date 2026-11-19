@@ -16,10 +16,10 @@ PyTorch 2.11.0+cu130, CUDA 13.0 / two-T4 runtime. Existing native packages are
 preserved. Version 0.1.1 supports Python 3.12 and 3.13 through separate conditional
 dependency profiles. Returned execution/recovery evidence has now passed review; see the dated status above.
 
-Slice 2 implements portable execution primitives. Research-data eligibility, real
-model schedules, evaluation metrics, calibration and final-test scoring remain later
-work. Public files contain code, configuration, technical documentation and invented
-fixtures only. No research data is needed to install or test this package.
+Slice 2 implements portable execution primitives. Slice 3 establishes the local
+[data freeze](data-freeze.md) and Slice 4 verifies [bundle evaluation](evaluation.md)
+on synthetic fixtures. Research modeling, calibration and final scoring remain later
+work. No research data is needed to install or test this package.
 
 ## Environment
 
@@ -133,10 +133,12 @@ Required expected digests are archive, eligible manifest, role manifest, configu
 and source snapshot. **write_bundle** writes the accepted manifest/NPZ shape;
 **validate_bundle** performs reusable in-memory validation; **read_bundle** is a minimal
 transport reader with no metric or selection policy. It verifies payload bytes and
-uses **allow_pickle=False**. Priya can build the Slice 4 consumer on these helpers.
+uses **allow_pickle=False**.
 
 Synthetic mode must be explicit and uses synthetic event metadata. Research mode
-requires the retained archive digest and the prescribed event allocation.
+requires the retained archive digest and the prescribed event allocation. The
+[Slice 4 evaluator](evaluation.md) uses these helpers for classification, calibration,
+and development review policies.
 Final-test reading/export is disabled until Slice 8 connects a completed selection lock.
 No application API or v2 schema is introduced.
 
