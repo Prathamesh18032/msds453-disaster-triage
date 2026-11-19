@@ -4,7 +4,7 @@ Public code and technical documentation repository for the MSDS 453 disaster-mes
 The research direction is humanitarian information classification on unfamiliar disaster
 events, with attention to rare categories and confidence-based human review.
 
-**Current state: Slice 2 execution foundation, with synthetic verification.**
+**Current state: Slice 3 local dataset freeze accepted; modeling remains future work.**
 The installable package provides strict configuration, provenance, FP32 weighted-loss
 accumulation, checkpoint recovery, attempt accounting and prediction-bundle v1.
 See [Kaggle start-here instructions](docs/kaggle-start-here.md),
@@ -13,9 +13,13 @@ See [Kaggle start-here instructions](docs/kaggle-start-here.md),
 evidence is recorded separately. Returned Kaggle verify/resume archives have now
 passed technical review, including both independent workers and four recovered probes.
 See the dated status in the runtime guide; research handling/feasibility remain later gates.
-No HumAID data has been transferred here, no eligible corpus is frozen, and no research
-model schedule, metric/calibration engine or final evaluation has run. Those belong
-to later slices. CrisisBench remains future work. Both partners accepted the scientific
+The local preparation pipeline validates the immutable archive, generates a bounded
+offline human audit, and can publish/independently verify data and role manifests
+after completed decisions. See [data preparation and review instructions](docs/data-preparation.md).
+The owner approved the 500-row review. The [accepted local data freeze](docs/data-freeze.md)
+contains 43,393 eligible rows after 16 cross-event duplicate removals; independent
+reconstruction and installed-wheel repeatability pass. Research model schedules,
+metrics/calibration and final evaluation remain later work. CrisisBench remains future work. Both partners accepted the scientific
 contract on November 18. CI and application APIs are not configured.
 
 ## Layout
@@ -23,7 +27,7 @@ contract on November 18. CI and application APIs are not configured.
 | Location | Purpose |
 |---|---|
 | `docs/` | Self-contained technical study and prediction-bundle contract |
-| `src/disaster_triage/` | Installable execution primitives and synthetic checks |
+| `src/disaster_triage/` | Execution primitives, audited data preparation, and verified role reader |
 | `tests/` | Offline tests with inline synthetic fixtures |
 | `configs/` | Strict synthetic configuration and gated research template |
 | `notebooks/` | Cleared synthetic runtime-verification notebook |
@@ -84,8 +88,8 @@ documentation. Do not point scripts at a neighboring coursework repository.
 ## Collaboration and checks
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md) before changes.
-Work on feature branches and submit pull requests into `main`; agent branches use
-`codex/<task>`. Branch protections and CI are deferred, so this is currently a
+Work on descriptive `feature/<task>` branches without a `codex` prefix and submit
+pull requests into `main`. Branch protections and CI are deferred, so this is currently a
 documented collaboration policy. Issues are enabled and the wiki is disabled.
 
 Review changes with `git status --short`, `git diff --check`, and `git diff --cached`

@@ -1,6 +1,8 @@
 # Implementation repository instructions
 
 Read `README.md`, `CONTRIBUTING.md`, and applicable technical sources before work.
+At every session start and immediately after context compaction, read the local continuation note `artifacts/work-log.md` before further action when it exists, then verify its checkpoint against actual Git/filesystem evidence. Update it before/after long work and before yielding. Keep this note Git-ignored: never stage, commit, copy to public docs, or push it. No sibling repository is a runtime dependency.
+
 This repository contains the implementation for the humanitarian message
 classification study. Keep it self-contained: no filesystem links, imports, or
 runtime dependencies on neighboring repositories. Do not copy coursework workflows,
@@ -14,8 +16,10 @@ Never print credentials or private dataset rows in logs or tool output.
 
 Inspect the full staged diff and exact file list before committing. Clear notebook
 outputs and execution counts; review markdown, attachments, and metadata as well.
-Do not force-add ignored files. Use `codex/<task>` branches for agent work and pull
-requests into `main` after initialization. Respect user authorization for commits
+Do not force-add ignored files. Use descriptive `feature/<task>` branches without
+a `codex` prefix, per the owner's 2026-11-18 instruction. For execution slices, use
+`feature/slice-<number>-<purpose>`. Preserve historical branch names in dated records.
+Open pull requests into `main`. Respect user authorization for commits
 and remote writes; do not force-push, overwrite unrelated work, or delete resources.
 
 Setup does not select a Python version, package manager, dependency set, compute
