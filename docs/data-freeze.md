@@ -90,8 +90,8 @@ character-five-gram Jaccard >=.90. It retrieved 44 candidate pairs and confirmed
 near edges, alongside six normalized-equality edges. Retrieval is approximate and
 does not prove exhaustive absence of near duplicates.
 
-Slice 4's evaluation engine remains separate parallel work. Slice 5's majority and
-six LR fits and Slice 6's transformer schedule/timed feasibility remain future work.
+The [Slice 4 evaluation engine](evaluation.md) is verified on invented bundles.
+Slice 5's majority and six LR fits and Slice 6's transformer schedule/timed feasibility remain future work.
 The synthetic-only training-config guard and Slice 8 final-prediction gate remain.
 Local preparation does not establish compatible private hosted processing. No research
 data upload, model result, provider-capacity claim or change to experiment accounting
