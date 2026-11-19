@@ -1,4 +1,4 @@
-"""Thin CLI. Research fitting/evaluation commands are intentionally absent."""
+"""Thin CLI for the local experiment workflow."""
 import argparse
 from dataclasses import replace
 import json
@@ -28,7 +28,40 @@ def main(argv=None):
             command.add_argument("--decisions", type=Path, required=True)
         if name == "verify":
             command.add_argument("--freeze", type=Path, required=True)
+    classical = sub.add_parser("classical", help="local CPU classical model selection")
+    classical_actions = classical.add_subparsers(dest="classical_action", required=True)
+    for name in ("run", "verify"):
+        command = classical_actions.add_parser(name)
+        command.add_argument("--root", type=Path, default=Path.cwd())
+        command.add_argument("--freeze", type=Path, required=True)
+        command.add_argument("--campaign-id", required=True)
+        if name == "run":
+            command.add_argument("--source-root", type=Path)
     args = parser.parse_args(argv)
+    if args.command == "classical":
+        from .classical import ClassicalError
+        from .classical_run import DeadlineReached, run_classical
+        try:
+            result = run_classical(
+                args.root, args.freeze, args.campaign_id,
+                source_root=getattr(args, "source_root", None),
+                verify=args.classical_action == "verify",
+            )
+        except DeadlineReached:
+            print("Classical execution reached the experiment cap or cutoff.", file=sys.stderr)
+            return 130
+        except KeyboardInterrupt:
+            print("Classical execution interrupted.", file=sys.stderr)
+            return 130
+        except ClassicalError as error:
+            print(str(error), file=sys.stderr)
+            return 1
+        except (ValueError, RuntimeError, OSError, TypeError, KeyError, EOFError, ImportError) as error:
+            print("Classical execution failed (" + type(error).__name__ +
+                  "). Check the freeze, pinned runtime, private artifacts, and budget.", file=sys.stderr)
+            return 1
+        print(json.dumps(result, indent=2))
+        return 0
     if args.command == "data":
         import csv
         import tarfile

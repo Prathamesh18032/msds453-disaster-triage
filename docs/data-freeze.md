@@ -2,8 +2,8 @@
 
 Date: November 19, 2026. Scientific policy is the [execution contract](execution-contract.md).
 The owner reviewed and approved the completed 500-row audit; local preparation,
-independent verification and exact-byte repeatability pass. No research model,
-calibration/policy fit or final evaluation has run.
+independent verification and exact-byte repeatability pass. Subsequent
+[classical model selection](classical-baselines.md) uses this freeze.
 
 ## Identity and counts
 
@@ -71,7 +71,7 @@ Keep the immutable raw archive available to the verifier and use the pinned loca
 MinHash environment. See [preparation commands](data-preparation.md). Downstream
 prediction bundles reuse the frozen archive/eligible/role hashes. Their config/code
 hashes identify the actual model run, not placeholders or automatically reused data-
-preparation source hashes. No real prediction bundle has been generated here.
+preparation source hashes. Classical selection bundles are generated separately.
 
 ## Limits and later gates
 
