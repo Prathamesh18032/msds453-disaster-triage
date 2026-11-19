@@ -18,8 +18,9 @@ dependency profiles. Returned execution/recovery evidence has now passed review;
 
 Slice 2 implements portable execution primitives. Slice 3 establishes the local
 [data freeze](data-freeze.md) and Slice 4 verifies [bundle evaluation](evaluation.md)
-on synthetic fixtures. Research modeling, calibration and final scoring remain later
-work. No research data is needed to install or test this package.
+on synthetic fixtures. The [classical runner](classical-baselines.md) provides local
+CPU research fitting and model selection. Research calibration and final scoring
+remain later work. No research data is needed to install or test this package.
 
 ## Environment
 
