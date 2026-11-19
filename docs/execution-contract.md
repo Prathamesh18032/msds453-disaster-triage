@@ -1,5 +1,10 @@
 # Execution contract
 
+**Execution update - November 19, 2026:** the [local eligible-data freeze](data-freeze.md)
+is accepted at 43,393 rows with unchanged scientific rules and final-access gates.
+Research models/evaluation remain future work. The adoption-status paragraph below
+is the historical November 18 record.
+
 Version: **2026-11-18**. Status: accepted by the data/model owner and evaluation collaborator; collaborator acceptance was reported by the owner on 2026-11-18. No research implementation, eligible-data freeze, model run or measured result exists yet. Slice 2 adds foundation primitives and synthetic verification; research execution remains pending. Implement and validate this contract before research fitting.
 
 This document is self-contained. Runtime code must not read another repository. Public Git contains reviewed code, nonsensitive configurations, technical documentation, synthetic fixtures and cleared notebooks. Research data/text, private manifests/predictions, weights, secrets, caches and generated artifacts remain outside Git. No application API is defined.

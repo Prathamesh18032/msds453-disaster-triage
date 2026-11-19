@@ -9,12 +9,12 @@ GitHub write permission.
 
 ## Branches and pull requests
 
-Start from an up-to-date `main` and create a task branch. For agent work:
+Start from an up-to-date `main` and create a descriptive feature branch:
 
 ```sh
 git switch main
 git pull --ff-only
-git switch -c codex/describe-your-task
+git switch -c feature/describe-your-task
 ```
 
 Keep changes focused and submit a pull request into `main`. Describe the changed
@@ -25,9 +25,10 @@ and CI have not been configured.
 
 ## Slice branches and review
 
-Use one focused feature branch and pull request per execution slice. Agent branches
-use `codex/slice-<number>-<purpose>`, for example
-`codex/slice-1-execution-agreement`. Target `main` and include the slice number,
+Use one focused feature branch and pull request per execution slice. Branches
+use `feature/slice-<number>-<purpose>`, for example
+`feature/slice-3-data-partition-freeze`. Do not add a `codex` prefix.
+Target `main` and include the slice number,
 changed behavior, validation and remaining gates in the PR description.
 
 Start independent slices from current `main`; parallel work uses separate branches.

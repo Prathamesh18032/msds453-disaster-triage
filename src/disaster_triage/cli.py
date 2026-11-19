@@ -17,7 +17,39 @@ def main(argv=None):
             command.add_argument("--stage", choices=("offline", "pretrained", "resume"), default="offline")
             command.add_argument("--source-root", type=Path, default=Path.cwd())
             command.add_argument("--resume-dir", type=Path)
+    data = sub.add_parser("data", help="local dataset preparation; human audit required")
+    actions = data.add_subparsers(dest="data_action", required=True)
+    for name in ("inspect", "prepare-audit", "freeze", "verify"):
+        command = actions.add_parser(name)
+        command.add_argument("--root", type=Path, default=Path.cwd())
+        if name in ("prepare-audit", "freeze"):
+            command.add_argument("--source-root", type=Path)
+        if name == "freeze":
+            command.add_argument("--decisions", type=Path, required=True)
+        if name == "verify":
+            command.add_argument("--freeze", type=Path, required=True)
     args = parser.parse_args(argv)
+    if args.command == "data":
+        import csv
+        import tarfile
+        from .dataset import inspect_data, prepare_audit, freeze_data, verify_freeze
+        try:
+            if args.data_action == "inspect":
+                result = inspect_data(args.root)
+            elif args.data_action == "prepare-audit":
+                result = prepare_audit(args.root, args.source_root or args.root)
+            elif args.data_action == "freeze":
+                result = freeze_data(args.root, args.source_root or args.root, args.decisions)
+            else:
+                result = verify_freeze(args.root, args.freeze)
+            print(json.dumps(result, indent=2))
+            return 0
+        except (ValueError, RuntimeError, OSError, TypeError, KeyError, EOFError,
+                csv.Error, tarfile.TarError) as error:
+            # Never echo raw parse values, source IDs, notes, or remote exceptions.
+            print("Data preparation failed (" + type(error).__name__ +
+                  "). Check archive identity, complete audit decisions, and local data paths.", file=sys.stderr)
+            return 1
     from .config import RunConfig, load_config
     config = load_config(args.config) if args.config else RunConfig()
     if args.device:
