@@ -23,6 +23,11 @@ scores v1 prediction bundles and fits development review policies. The
 [classical runner](docs/classical-baselines.md) fits the majority reference and the
 declared TF-IDF/logistic regression grid on the local CPU. Research calibration and
 final evaluation remain later work. CrisisBench remains future work.
+The [DistilBERT runner](docs/transformer-execution.md) prepares the private
+train/selection handoff, measures a pilot, and runs the bounded screening and
+repeat schedule when its measured forecast fits. The cleared Kaggle notebook
+defaults to setup and keeps recovery archives private.
+
 Both partners accepted the scientific contract on November 18. CI and application APIs are not configured.
 
 ## Layout
