@@ -68,7 +68,34 @@ def main(argv=None):
         if name == "run":
             command.add_argument("--source-root", type=Path)
     _transformer_actions(sub)
+    evidence = sub.add_parser("evidence", help="render verified model-selection aggregates")
+    evidence_actions = evidence.add_subparsers(dest="evidence_action", required=True)
+    render = evidence_actions.add_parser("render")
+    render.add_argument("--root", type=Path, default=Path.cwd())
+    render.add_argument("--output-id", required=True)
+    render.add_argument("--mode", choices=("synthetic", "development"), default="synthetic")
+    render.add_argument("--selection", type=Path, help="Slice 5 selection.json")
+    render.add_argument("--selection-sha256")
+    render.add_argument("--summary", type=Path, help="Slice 6 development-summary.json")
+    render.add_argument("--summary-sha256")
     args = parser.parse_args(argv)
+    if args.command == "evidence":
+        from .evidence import EvidenceError, render_evidence
+
+        try:
+            result = render_evidence(
+                args.root, args.output_id, mode=args.mode,
+                selection_path=args.selection, selection_sha256=args.selection_sha256,
+                summary_path=args.summary, summary_sha256=args.summary_sha256,
+            )
+        except EvidenceError as error:
+            print(f"Evidence rendering failed. {error}", file=sys.stderr)
+            return 1
+        except OSError:
+            print("Evidence rendering failed. Check access to the local output directory.", file=sys.stderr)
+            return 1
+        print(json.dumps(result, indent=2))
+        return 0
     if args.command == "transformer":
         from .transformer_run import command
         try:
