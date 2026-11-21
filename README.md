@@ -26,7 +26,9 @@ final evaluation remain later work. CrisisBench remains future work.
 The [DistilBERT runner](docs/transformer-execution.md) prepares the private
 train/selection handoff, measures a pilot, and runs the bounded screening and
 repeat schedule when its measured forecast fits. The cleared Kaggle notebook
-defaults to setup and keeps recovery archives private.
+defaults to setup and keeps recovery archives private. The
+[study evidence renderer](docs/study-evidence.md) turns saved model-selection
+aggregates into reproducible tables and figures on the CPU.
 
 Both partners accepted the scientific contract on November 18. CI and application APIs are not configured.
 
@@ -38,7 +40,7 @@ Both partners accepted the scientific contract on November 18. CI and applicatio
 | `src/disaster_triage/` | Execution primitives, audited data preparation, verified roles, classical baselines, and bundle evaluation |
 | `tests/` | Offline tests with inline synthetic fixtures |
 | `configs/` | Strict synthetic configuration and gated research template |
-| `notebooks/` | Cleared synthetic runtime-verification notebook |
+| `notebooks/` | Cleared execution, runtime-verification, and study evidence notebooks |
 | `scripts/` | Repository, notebook-execution and code-only handoff checks |
 | `data/raw/`, `data/processed/`, `data/derived/` | Local research data, ignored by Git |
 | `artifacts/` | Local weights, predictions, metrics, and figures, ignored by Git |
