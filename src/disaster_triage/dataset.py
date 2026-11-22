@@ -12,6 +12,7 @@ import time
 
 from .bundles import RoleRow, role_bytes
 from .constants import EVENTS, LABELS
+from .evaluation_access import require_final_access
 from .data_audit import (apply_decisions, audit_binding, audit_sample, audit_summary,
                          decision_template, validate_decisions, worksheet_html)
 from .data_duplicates import duplicate_components
@@ -294,10 +295,8 @@ def freeze_data(root, source_root, decisions_path, *, spec=RESEARCH_SPEC):
         shutil.rmtree(stage, ignore_errors=True)
 
 
-def verify_freeze(root, freeze, *, mode="research"):
-    directory = resolve_private(root, freeze)
-    descriptor_path = resolve_private(root, directory / "freeze.json")
-    descriptor = _json_load(descriptor_path.read_bytes())
+def _verified_descriptor(content, directory, mode):
+    descriptor = _json_load(content)
     expected_fields = {"schema_version", "corpus_kind", "archive_sha256", "archive_bytes", "event_rows",
                        "policy_sha256", "labels", "events", "files", "summary", "freeze_id", "complete"}
     if (not isinstance(descriptor, dict) or set(descriptor) != expected_fields
@@ -309,6 +308,13 @@ def verify_freeze(root, freeze, *, mode="research"):
     if (descriptor["labels"] != list(LABELS) or descriptor["policy_sha256"] != POLICY_SHA256
             or descriptor["events"] != {p: list(es) for p, es in EVENTS.items()}):
         raise ValueError("freeze policy mismatch")
+    return descriptor
+
+
+def verify_freeze(root, freeze, *, mode="research"):
+    directory = resolve_private(root, freeze)
+    descriptor_path = resolve_private(root, directory / "freeze.json")
+    descriptor = _verified_descriptor(descriptor_path.read_bytes(), directory, mode)
     spec = CorpusSpec(descriptor["archive_sha256"], descriptor["archive_bytes"],
                       tuple(sorted(descriptor["event_rows"].items())), descriptor["corpus_kind"])
     ingested = read_archive(_archive(root), spec)
@@ -345,20 +351,43 @@ class FrozenDataset:
         self._descriptor_bytes = (self.directory / "freeze.json").read_bytes()
         self.descriptor = _json_load(self._descriptor_bytes)
 
+    @classmethod
+    def from_verified_descriptor(cls, root, freeze, *, digest, mode):
+        """Reopen an independently verified freeze without reading any text payloads."""
+        frozen = cls.__new__(cls)
+        frozen.root = Path(root).resolve()
+        frozen.directory = resolve_private(root, freeze)
+        path = resolve_private(root, frozen.directory / "freeze.json")
+        frozen._descriptor_bytes = path.read_bytes()
+        if sha256_bytes(frozen._descriptor_bytes) != digest:
+            raise ValueError("freeze descriptor digest mismatch")
+        frozen.descriptor = _verified_descriptor(frozen._descriptor_bytes, frozen.directory, mode)
+        return frozen
+
     def load_role(self, role):
         if role == "final_test":
             raise ValueError("final-test content loading awaits the Slice 8 selection/scope lock")
         if role not in ("train", *DEV_ROLES):
             raise ValueError("unsupported dataset role")
+        return self._load_role(role)
+
+    def load_final_role(self, final_access):
+        require_final_access(final_access, {
+            "mode": self.descriptor["corpus_kind"], "role": "final_test",
+            "archive_sha256": self.descriptor["archive_sha256"],
+            "eligible_manifest_sha256": self.descriptor["files"]["eligible-manifest.jsonl"],
+            "role_manifest_sha256": self.descriptor["files"]["roles/final_test.jsonl"],
+        })
+        return self._load_role("final_test")
+
+    def _load_role(self, role):
         if resolve_private(self.root, self.directory / "freeze.json").read_bytes() != self._descriptor_bytes:
             raise ValueError("freeze changed after verification")
         path = resolve_private(self.root, self.directory / f"texts/{role}.jsonl")
-        if sha256_file(path) != self.descriptor["files"][f"texts/{role}.jsonl"]:
+        content = path.read_bytes()
+        if sha256_bytes(content) != self.descriptor["files"][f"texts/{role}.jsonl"]:
             raise ValueError("dataset changed after verification")
-        rows = []
-        with path.open("rb") as stream:
-            for line in stream:
-                row = _json_load(line)
-                if row["role"] == role:
-                    rows.append(row)
-        return tuple(rows)
+        rows = tuple(_json_load(line) for line in content.splitlines())
+        if any(row["role"] != role for row in rows):
+            raise ValueError("dataset text role mismatch")
+        return rows

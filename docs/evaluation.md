@@ -3,7 +3,8 @@
 The CPU evaluator consumes [prediction-bundle v1](execution-contract.md#5-prediction-bundle-v1)
 using NumPy and SciPy. It reads predictions and trusted metadata without access to
 dataset text, training code, or model weights. Slice 4 is exercised on invented
-fixtures. Both final-test gates remain in force through Slice 8.
+fixtures. The default final-test gates remain in force. Slice 8 enables a dedicated
+campaign after the selection and readiness records are verified.
 
 ## Inputs and results
 
@@ -127,3 +128,60 @@ assert report["review"][0]["pooled"]["requests"]["accepted_false_positives"] == 
 assert [scenario["pooled"]["deferred"] for scenario in report["review"]] == [0, 0, 0, 0]
 print(root)
 ```
+
+## Locked held-out campaign
+
+Slice 8 adds a local campaign over the accepted freeze. The ordinary dataset
+loader, bundle reader and writer, scorer, and seed summary still reject the
+final role by default. The campaign grants access only after checking the
+independently retained selection lock and readiness digests, all development
+bundles and saved policies, the ordered final role, and the locked predictor
+identities.
+
+Build the private selection lock from the accepted receipts with
+`scripts/lock_slice8.py --help`. Supply the independently retained Slice 7
+ledger snapshot and the owners' joint selection approval. Save the printed
+lock digest in the operator record independently of the campaign directory.
+Use the pinned Python 3.12 profile with cached assets at the approved
+DistilBERT revision. The probe runs on 256 invented inputs, including
+max-length batches, with local CPU first and MPS considered only if
+necessary. The forecast covers 11,845 rows per trained predictor with a
+20% margin. An installed wheel can run outside the checkout. For its
+probe, point `--source-root` at the matching checkout.
+
+```sh
+disaster-triage evaluation probe --root "$ROOT" --campaign-id "$CAMPAIGN" \
+  --source-root "$SOURCE" --selection-lock-sha256 "$LOCK_SHA"
+disaster-triage evaluation prepare --root "$ROOT" --campaign-id "$CAMPAIGN" \
+  --selection-lock-sha256 "$LOCK_SHA"
+disaster-triage evaluation final --root "$ROOT" --campaign-id "$CAMPAIGN" \
+  --selection-lock-sha256 "$LOCK_SHA" --readiness-sha256 "$READY_SHA"
+disaster-triage evaluation verify --root "$ROOT" --campaign-id "$CAMPAIGN" \
+  --selection-lock-sha256 "$LOCK_SHA" --readiness-sha256 "$READY_SHA"
+```
+
+Capture the preparation receipt digest in the operator record before running
+`final`. Preparation runs four saved predictors on calibration and policy
+roles, fits four temperatures, and freezes the four scenarios per predictor.
+All roles share the same per-run inference configuration and producer
+identity. The separate training configs and exact serialized parent hashes
+remain in that inference configuration and in the selection lock.
+
+`final` runs the majority rule, selected LR and all three locked DistilBERT
+seeds against the same final rows. It uses the prepared thresholds unchanged.
+The majority report contains classification metrics. Trained reports also
+contain unweighted NLL and 15-bin ECE, along with review denominators and
+counts. Final per-class displays use JSON null for undefined ratios. Macro-F1
+still uses zeros in the fixed ten-label mean.
+
+Outputs are under the ignored `artifacts/evaluation/<campaign>` directory.
+Each predictor bundle and report is published atomically with a receipt
+attested by its attempt record. Ordinary interrupts preserve completed
+bundles. Repeat the same command and digests after the ledger is reconciled.
+A hard stop may leave a running record. Preserve that record and reconcile
+the termination time and elapsed duration with actual process evidence
+before retrying. If a completed output requires a correction, keep its
+original bytes and record the reviewed defect and correction before any
+separate rerun. The shared 24-hour cap applies to evaluation. The November 23
+training cutoff still applies to training. `verify` replays aggregate scores
+from the final manifest and retained bundles without inference.

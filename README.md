@@ -21,8 +21,8 @@ contains 43,393 eligible rows after 16 cross-event duplicate removals; independe
 reconstruction and installed-wheel repeatability pass. The [CPU evaluation engine](docs/evaluation.md)
 scores v1 prediction bundles and fits development review policies. The
 [classical runner](docs/classical-baselines.md) fits the majority reference and the
-declared TF-IDF/logistic regression grid on the local CPU. Research calibration and
-final evaluation remain later work. CrisisBench remains future work.
+declared TF-IDF/logistic regression grid on the local CPU. The evaluator also supports the locked Slice 8 campaign, including saved
+review policies and final-test replay. CrisisBench remains future work.
 The [DistilBERT runner](docs/transformer-execution.md) prepares the private
 train/selection handoff, measures a pilot, and runs the bounded screening and
 repeat schedule when its measured forecast fits. The cleared Kaggle notebook

@@ -170,3 +170,16 @@ def _advances(earlier, later):
         return False
     return all(later.get("artifact_sha256", {}).get(key) == value
                for key, value in earlier.get("artifact_sha256", {}).items())
+
+
+def guard_evaluation_budget(root, seconds, *, now=None):
+    """Admit inference and scoring under the shared cap, independent of training cutoff."""
+    if type(seconds) not in (float, int) or not math.isfinite(seconds) or seconds <= 0:
+        raise ValueError("evaluation needs a positive measured forecast")
+    summary = budget_summary(root, now=now)
+    if summary["unresolved_attempts"]:
+        raise RuntimeError("reconcile unresolved attempts before evaluation")
+    available = summary["remaining_job_hours"] * 3600
+    if seconds >= available:
+        raise RuntimeError("evaluation exceeds the remaining cumulative budget")
+    return available
