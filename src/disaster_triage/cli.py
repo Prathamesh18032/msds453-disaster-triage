@@ -68,6 +68,17 @@ def main(argv=None):
         if name == "run":
             command.add_argument("--source-root", type=Path)
     _transformer_actions(sub)
+    evaluation = sub.add_parser("evaluation", help="locked development and held-out evaluation")
+    evaluation_actions = evaluation.add_subparsers(dest="evaluation_action", required=True)
+    for action in ("probe", "prepare", "final", "verify"):
+        step = evaluation_actions.add_parser(action)
+        step.add_argument("--root", type=Path, default=Path.cwd())
+        step.add_argument("--campaign-id", required=True)
+        step.add_argument("--selection-lock-sha256", required=True)
+        if action == "probe":
+            step.add_argument("--source-root", type=Path)
+        if action in ("final", "verify"):
+            step.add_argument("--readiness-sha256", required=True)
     evidence = sub.add_parser("evidence", help="render verified model-selection aggregates")
     evidence_actions = evidence.add_subparsers(dest="evidence_action", required=True)
     render = evidence_actions.add_parser("render")
@@ -95,6 +106,23 @@ def main(argv=None):
             print("Evidence rendering failed. Check access to the local output directory.", file=sys.stderr)
             return 1
         print(json.dumps(result, indent=2))
+        return 0
+    if args.command == "evaluation":
+        from .evaluation_campaign import command
+        from .evaluation_lock import EvaluationError
+
+        try:
+            print(json.dumps(command(args), indent=2))
+        except KeyboardInterrupt:
+            print("Evaluation interrupted. Check the ledger before resuming under the same lock.", file=sys.stderr)
+            return 130
+        except EvaluationError as error:
+            print(str(error), file=sys.stderr)
+            return 1
+        except (ValueError, RuntimeError, OSError, TypeError, KeyError, EOFError, ImportError) as error:
+            print(f"Evaluation failed ({type(error).__name__}). Check the locked inputs and ledger.",
+                  file=sys.stderr)
+            return 1
         return 0
     if args.command == "transformer":
         from .transformer_run import command

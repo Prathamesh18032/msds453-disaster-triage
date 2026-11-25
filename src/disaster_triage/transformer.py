@@ -109,11 +109,13 @@ def synchronize(device):
         torch.mps.synchronize()
 
 
-def infer(model, tokenizer, encoded, indices, batch_size, device):
+def infer(model, tokenizer, encoded, indices, batch_size, device, *, check_deadline=None):
     model.eval()
     chunks = []
     with torch.inference_mode():
         for start in range(0, len(indices), batch_size):
+            if check_deadline is not None:
+                check_deadline()
             inputs = batch_inputs(tokenizer, encoded, indices[start:start + batch_size], device)
             logits = model(**inputs).logits
             if logits.dtype != torch.float32 or logits.shape != (len(inputs["input_ids"]), 10):

@@ -12,6 +12,7 @@ from scipy.special import log_softmax
 
 from .bundles import BundleExpectation, read_bundle
 from .constants import LABELS
+from .evaluation_access import require_final_access
 from .provenance import json_bytes, sha256_bytes
 
 
@@ -54,8 +55,16 @@ def _is_digest(value):
     return isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None
 
 
-def _load(bundle):
-    manifest, arrays = read_bundle(bundle.directory, expected=bundle.expected)
+def _load(bundle, final_access=None):
+    if bundle.expected.role == "final_test":
+        require_final_access(final_access, {
+            "mode": bundle.expected.mode, "role": bundle.expected.role, **bundle.expected.digests,
+        })
+        final_access.check_run({
+            "run_id": bundle.run_id, "model_family": bundle.model_family, "seed": bundle.seed,
+            **bundle.expected.digests,
+        })
+    manifest, arrays = read_bundle(bundle.directory, expected=bundle.expected, final_access=final_access)
     if (manifest["run_id"], manifest["model_family"], manifest["seed"]) != (
         bundle.run_id, bundle.model_family, bundle.seed
     ) or type(manifest["seed"]) is not type(bundle.seed):
@@ -70,7 +79,7 @@ def _ratio(numerator, denominator):
     return numerator / denominator if denominator else None
 
 
-def _classification(truth, predicted):
+def _classification(truth, predicted, *, display=False):
     counts = np.bincount(
         LABEL_COUNT * truth + predicted, minlength=LABEL_COUNT ** 2
     ).reshape(LABEL_COUNT, LABEL_COUNT)
@@ -86,9 +95,18 @@ def _classification(truth, predicted):
             "support": support,
             "predicted_count": predicted_count,
         }
+    macro_f1 = mean(row["f1"] for row in classes.values()) if len(truth) else None
+    if display:
+        for row in classes.values():
+            if not row["predicted_count"]:
+                row["precision"] = None
+            if not row["support"]:
+                row["recall"] = None
+            if not row["support"] + row["predicted_count"]:
+                row["f1"] = None
     return {
         "n_rows": len(truth),
-        "macro_f1": mean(row["f1"] for row in classes.values()) if len(truth) else None,
+        "macro_f1": macro_f1,
         "classes": classes,
     }
 
@@ -163,8 +181,8 @@ def fit_review_policy(calibration: BundleInput, policy: BundleInput) -> dict:
 
 
 def _validate_fitted_policy(record, expected_digest, bundle):
-    if bundle["role"] != "policy" or bundle["model_family"] == "majority":
-        raise ValueError("a fitted policy applies to its logits policy bundle")
+    if bundle["role"] not in ("policy", "final_test") or bundle["model_family"] == "majority":
+        raise ValueError("a fitted policy applies to the same run’s logits")
     if not _is_digest(expected_digest) or sha256_bytes(json_bytes(record)) != expected_digest:
         raise ValueError("fitted-policy digest mismatch")
     if (
@@ -178,10 +196,9 @@ def _validate_fitted_policy(record, expected_digest, bundle):
     inputs = record["inputs"]
     if (
         not isinstance(inputs, dict) or set(inputs) != {"calibration", "policy"}
-        or inputs["policy"] != _fields(bundle, ROLE_DIGESTS)
-        or not isinstance(inputs["calibration"], dict)
-        or set(inputs["calibration"]) != set(ROLE_DIGESTS)
-        or not all(_is_digest(value) for value in inputs["calibration"].values())
+        or any(not isinstance(item, dict) or set(item) != set(ROLE_DIGESTS)
+               or not all(map(_is_digest, item.values())) for item in inputs.values())
+        or (bundle["role"] == "policy" and inputs["policy"] != _fields(bundle, ROLE_DIGESTS))
     ):
         raise ValueError("fitted policy input provenance mismatch")
     temperature = record["temperature"]
@@ -233,12 +250,22 @@ def _review(truth, predicted, accepted):
 
 
 def score_bundle(
-    bundle: BundleInput, *, fitted_policy: dict | None = None, fitted_policy_sha256: str | None = None
+    bundle: BundleInput, *, fitted_policy: dict | None = None,
+    fitted_policy_sha256: str | None = None, final_access=None,
 ) -> dict:
-    """Score a development bundle; optionally apply its saved policy by verified digest."""
-    metadata, arrays = _load(bundle)
+    """Score predictions and apply a saved policy by verified digest."""
+    final = bundle.expected.role == "final_test"
     if (fitted_policy is None) != (fitted_policy_sha256 is None):
         raise ValueError("supply the fitted policy and its expected digest together")
+    if final:
+        require_final_access(final_access, {
+            "mode": bundle.expected.mode, "role": "final_test", **bundle.expected.digests,
+        })
+        final_access.check_policy(bundle.run_id, fitted_policy_sha256)
+        if fitted_policy is not None and _is_digest(fitted_policy_sha256):
+            if sha256_bytes(json_bytes(fitted_policy)) != fitted_policy_sha256:
+                raise ValueError("fitted-policy digest mismatch")
+    metadata, arrays = _load(bundle, final_access)
     if fitted_policy is not None:
         _validate_fitted_policy(fitted_policy, fitted_policy_sha256, metadata)
 
@@ -251,8 +278,11 @@ def score_bundle(
         "schema_version": 1,
         "bundle": metadata,
         "labels": list(LABELS),
-        "pooled": _classification(truth, predicted),
-        "events": {event: _classification(truth[mask], predicted[mask]) for event, mask in event_masks.items()},
+        "pooled": _classification(truth, predicted, display=final),
+        "events": {
+            event: _classification(truth[mask], predicted[mask], display=final)
+            for event, mask in event_masks.items()
+        },
     }
     if logits is None:
         return report
@@ -295,7 +325,7 @@ def _seed_stats(scores):
     }
 
 
-def summarize_seeds(reports, *, cohort: SeedCohort) -> dict:
+def summarize_seeds(reports, *, cohort: SeedCohort, final_access=None) -> dict:
     """Summarize comparable DistilBERT scores, retaining each individual report."""
     configs = cohort.config_sha256_by_seed
     if (
@@ -311,6 +341,11 @@ def summarize_seeds(reports, *, cohort: SeedCohort) -> dict:
         raise ValueError("at least one DistilBERT report is required")
     scope_keys = (*DATA_KEYS, "role", "role_manifest_sha256")
     scope = _fields(reports[0]["bundle"], scope_keys)
+    final = scope["role"] == "final_test"
+    if final:
+        require_final_access(final_access, scope)
+        if configs.keys() != TRANSFORMER_SEEDS or len(reports) != len(TRANSFORMER_SEEDS):
+            raise ValueError("final cohort requires all three locked seeds")
     events = sorted(reports[0]["events"])
     by_seed = {}
     for report in reports:
@@ -322,9 +357,12 @@ def summarize_seeds(reports, *, cohort: SeedCohort) -> dict:
             raise ValueError("seed configuration does not match the declared cohort")
         if (
             report["labels"] != list(LABELS) or _fields(bundle, scope_keys) != scope
-            or sorted(report["events"]) != events or scope["role"] == "final_test"
+            or sorted(report["events"]) != events
         ):
             raise ValueError("seed reports must cover the same development role and frozen rows")
+        if final:
+            final_access.check_run(bundle)
+            final_access.check_policy(bundle["run_id"], report.get("fitted_policy_sha256"))
         by_seed[seed] = report
     ordered = [by_seed[seed] for seed in sorted(by_seed)]
     return {

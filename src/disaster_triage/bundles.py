@@ -8,6 +8,7 @@ import tempfile
 import numpy as np
 from .accounting import identity
 from .constants import ARCHIVE_SHA256, EVENTS, LABELS, ROLES
+from .evaluation_access import require_final_access
 from .provenance import atomic_bytes, json_bytes, sha256_bytes, sha256_file, save_json
 
 DIGEST_KEYS = {
@@ -69,14 +70,19 @@ class BundleExpectation:
         elif any(not row.event_id.startswith("synthetic_") for row in self.rows):
             raise ValueError("synthetic fixtures must use synthetic event metadata")
 
-def _gate(role):
-    if role == "final_test":
-        raise ValueError("final-test predictions disabled until Slice 8 selection/scope lock")
+def _gate(expected, final_access, manifest=None):
+    if expected.role == "final_test":
+        require_final_access(final_access, {"mode": expected.mode, "role": expected.role, **expected.digests})
+        if manifest is not None:
+            final_access.check_run(manifest)
+    elif manifest is not None and manifest.get("role") == "final_test":
+        require_final_access(None, {})
 
-def validate_bundle(manifest, arrays, expected):
-    _gate(expected.role)
+def validate_bundle(manifest, arrays, expected, *, final_access=None):
+    _gate(expected, final_access)
     if not isinstance(manifest, dict) or set(manifest) != FIELDS:
         raise ValueError("missing or unsupported manifest fields")
+    _gate(expected, final_access, manifest)
     if type(manifest["schema_version"]) is not int or manifest["schema_version"] != 1:
         raise ValueError("unsupported schema version")
     identity(manifest["run_id"])
@@ -131,8 +137,9 @@ def validate_bundle(manifest, arrays, expected):
     elif array.dtype != np.dtype("int64") or array.shape != (n,) or not ((0 <= array) & (array < 10)).all():
         raise ValueError("invalid hard-prediction vector")
 
-def write_bundle(directory, *, expected, run_id, model_family, seed, arrays, code_revision=None):
-    _gate(expected.role)
+def write_bundle(directory, *, expected, run_id, model_family, seed, arrays,
+                 code_revision=None, final_access=None):
+    _gate(expected, final_access)
     manifest = {
         "schema_version": 1, "run_id": run_id, "model_family": model_family,
         "seed": seed, "prediction_kind": "hard_labels" if model_family == "majority" else "logits",
@@ -140,7 +147,7 @@ def write_bundle(directory, *, expected, run_id, model_family, seed, arrays, cod
         **expected.digests, "code_revision": code_revision,
         "payload_sha256": sha256_bytes(b"pending"),
     }
-    validate_bundle(manifest, arrays, expected)
+    validate_bundle(manifest, arrays, expected, final_access=final_access)
     directory = Path(directory)
     directory.parent.mkdir(parents=True, exist_ok=True)
     if directory.exists():
@@ -156,17 +163,23 @@ def write_bundle(directory, *, expected, run_id, model_family, seed, arrays, cod
             shutil.rmtree(temporary)
     return manifest
 
-def read_bundle(directory, *, expected):
+def read_bundle(directory, *, expected, final_access=None):
     """Minimal shared transport reader. Evaluation policy stays in Slice 4."""
-    _gate(expected.role)
+    _gate(expected, final_access)
     directory = Path(directory)
     manifest = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
     if not isinstance(manifest, dict):
         raise ValueError("manifest must be a JSON object")
-    _gate(manifest.get("role"))
+    _gate(expected, final_access, manifest)
+    if expected.role == "final_test" and (
+        manifest.get("role") != "final_test" or any(
+            manifest.get(key) != digest for key, digest in expected.digests.items()
+        )
+    ):
+        raise ValueError("final-test bundle manifest does not match the verified scope")
     if manifest.get("payload_sha256") != sha256_file(directory / "predictions.npz"):
         raise ValueError("payload digest mismatch")
     with np.load(directory / "predictions.npz", allow_pickle=False) as payload:
         arrays = {key: payload[key] for key in payload.files}
-    validate_bundle(manifest, arrays, expected)
+    validate_bundle(manifest, arrays, expected, final_access=final_access)
     return manifest, arrays
