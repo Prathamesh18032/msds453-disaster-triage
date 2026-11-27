@@ -107,7 +107,11 @@ def _support(metrics):
     return tuple(metrics["classes"][label]["support"] for label in LABELS)
 
 
-def _validate_score(metrics):
+def _correct(cell):
+    return round((cell["recall"] or 0) * cell["support"])
+
+
+def _validate_score(metrics, *, final=False):
     classes = metrics["classes"]
     _require(set(classes) == set(LABELS), "Report class table must contain all ten labels.")
     rows = metrics["n_rows"]
@@ -116,26 +120,36 @@ def _validate_score(metrics):
         support, predicted = cell["support"], cell["predicted_count"]
         _require(all(type(count) is int and 0 <= count <= rows for count in (support, predicted)),
                  "Report contains invalid class support or predicted counts.")
-        _require(_is_score(cell["recall"]), "Report contains invalid recall.")
-        correct = round(cell["recall"] * support)
+        if final and not support:
+            _require(cell["recall"] is None, "Held-out recall requires true support.")
+        else:
+            _require(_is_score(cell["recall"]), "Report contains invalid recall.")
+        correct = _correct(cell)
+        precision = cell["precision"] is None if final and not predicted else _same_number(
+            cell["precision"], correct / predicted if predicted else 0,
+        )
+        f1 = cell["f1"] is None if final and not (support + predicted) else _same_number(
+            cell["f1"], 2 * correct / (support + predicted) if support + predicted else 0,
+        )
         _require(0 <= correct <= min(support, predicted)
-                 and _same_number(cell["recall"], correct / support if support else 0)
-                 and _same_number(cell["precision"], correct / predicted if predicted else 0)
-                 and _same_number(cell["f1"], 2 * correct / (support + predicted)
-                                  if support + predicted else 0),
+                 and (not support or _same_number(cell["recall"], correct / support))
+                 and (final or support or _same_number(cell["recall"], 0))
+                 and precision and f1,
                  "Report class metrics disagree with their denominators.")
     _require(sum(_support(metrics)) == rows
              and sum(cell["predicted_count"] for cell in classes.values()) == rows
-             and _same_number(metrics["macro_f1"], mean(cell["f1"] for cell in classes.values())),
+             and _same_number(metrics["macro_f1"], mean(cell["f1"] or 0 for cell in classes.values())),
              "Report row counts or fixed-label macro-F1 disagree with its class table.")
 
 
 def _validate_report(report, scope, events, *, family, seed):
+    final = scope["role"] == "final_test"
     _require(type(report["schema_version"]) is int and report["schema_version"] == 1,
              "Unsupported evaluator report schema.")
     bundle = report["bundle"]
+    scope_name = "held-out" if final else "model-selection"
     _require(all(bundle.get(field) == value for field, value in scope.items()),
-             "Report scope disagrees with the model-selection freeze or row manifest.")
+             f"Report scope disagrees with the {scope_name} freeze or row manifest.")
     _require(report["labels"] == list(LABELS), "Report differs from canonical ten-label order.")
     _require(bundle["model_family"] == family and bundle["seed"] == seed
              and type(bundle["seed"]) is type(seed), "Unexpected report family or seed.")
@@ -143,18 +157,17 @@ def _validate_report(report, scope, events, *, family, seed):
              and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,119}", bundle["run_id"])
              and all(_digest(bundle[key]) for key in ("config_sha256", "payload_sha256")),
              "Invalid report run or configuration reference.")
-    _require(set(report["events"]) == set(events), "Report has unexpected model-selection events.")
+    _require(set(report["events"]) == set(events), f"Report has unexpected {scope_name} events.")
     pooled = report["pooled"]
     by_event = [report["events"][event] for event in events]
     for metrics in (pooled, *by_event):
-        _validate_score(metrics)
+        _validate_score(metrics, final=final)
     for label in LABELS:
         cell = pooled["classes"][label]
         events_cells = [metrics["classes"][label] for metrics in by_event]
         _require(all(cell[field] == sum(row[field] for row in events_cells)
                      for field in ("support", "predicted_count"))
-                 and round(cell["recall"] * cell["support"]) ==
-                 sum(round(row["recall"] * row["support"]) for row in events_cells),
+                 and _correct(cell) == sum(map(_correct, events_cells)),
                  "Pooled class counts disagree with the event totals.")
 
 

@@ -109,7 +109,7 @@ def _recall(fig, evidence, mode):
         ax.spines[:].set_visible(False)
 
 
-def render_figures(directory, evidence, mode):
+def render_figures(directory, evidence, mode, *, figures=None):
     try:
         import matplotlib as mpl
         from matplotlib.backends.backend_agg import FigureCanvasAgg
@@ -127,11 +127,13 @@ def render_figures(directory, evidence, mode):
             "axes.edgecolor": GRID, "xtick.color": INK, "ytick.color": INK,
             "pdf.fonttype": 42, "savefig.dpi": 240,
         })
-        for name, height, draw in (
-            ("figure-1-model-comparison", 3.35, _comparison),
-            ("figure-2-learning-rate-screening", 3.25, _screen),
-            ("figure-3-rare-class-recall", 3.35, _recall),
-        ):
+        if figures is None:
+            figures = (
+                ("figure-1-model-comparison", 3.35, _comparison),
+                ("figure-2-learning-rate-screening", 3.25, _screen),
+                ("figure-3-rare-class-recall", 3.35, _recall),
+            )
+        for name, height, draw in figures:
             fig = Figure(figsize=(7.1, height), facecolor="white")
             FigureCanvasAgg(fig)
             draw(fig, evidence, mode)

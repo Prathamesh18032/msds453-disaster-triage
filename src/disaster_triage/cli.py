@@ -79,16 +79,18 @@ def main(argv=None):
             step.add_argument("--source-root", type=Path)
         if action in ("final", "verify"):
             step.add_argument("--readiness-sha256", required=True)
-    evidence = sub.add_parser("evidence", help="render verified model-selection aggregates")
+    evidence = sub.add_parser("evidence", help="render verified study aggregates")
     evidence_actions = evidence.add_subparsers(dest="evidence_action", required=True)
     render = evidence_actions.add_parser("render")
     render.add_argument("--root", type=Path, default=Path.cwd())
     render.add_argument("--output-id", required=True)
-    render.add_argument("--mode", choices=("synthetic", "development"), default="synthetic")
+    render.add_argument("--mode", choices=("synthetic", "development", "final"), default="synthetic")
     render.add_argument("--selection", type=Path, help="Slice 5 selection.json")
     render.add_argument("--selection-sha256")
     render.add_argument("--summary", type=Path, help="Slice 6 development-summary.json")
     render.add_argument("--summary-sha256")
+    render.add_argument("--final-manifest", type=Path, help="Slice 8 final manifest.json")
+    render.add_argument("--final-manifest-sha256")
     args = parser.parse_args(argv)
     if args.command == "evidence":
         from .evidence import EvidenceError, render_evidence
@@ -98,6 +100,7 @@ def main(argv=None):
                 args.root, args.output_id, mode=args.mode,
                 selection_path=args.selection, selection_sha256=args.selection_sha256,
                 summary_path=args.summary, summary_sha256=args.summary_sha256,
+                final_manifest_path=args.final_manifest, final_manifest_sha256=args.final_manifest_sha256,
             )
         except EvidenceError as error:
             print(f"Evidence rendering failed. {error}", file=sys.stderr)
